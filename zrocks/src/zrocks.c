@@ -259,12 +259,6 @@ int zrocks_init(const char *dev_name) {
         return -1;
     }
 
-    ret = xztl_init_thread_ctxs();
-    if (ret) {
-        pthread_spin_destroy(&zrocks_mp_spin);
-        return -1;
-    }
-
     if (xztl_mempool_create(ZROCKS_MEMORY, 0, ZROCKS_BUF_ENTS,
                             ZROCKS_MAX_READ_SZ, zrocks_alloc, zrocks_free)) {
         xztl_exit();
