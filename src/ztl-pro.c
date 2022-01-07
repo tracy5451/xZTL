@@ -101,21 +101,11 @@ void ztl_pro_exit(void) {
         ret--;
         ztl_pro_grp_exit(glist[ret]);
     }
+	xztl_mempool_destroy(XZTL_NODE_MGMT_ENTRY, 0);
+	xztl_mempool_destroy(XZTL_ZTL_PRO_CTX, 0);
 
     free(glist);
     log_info("ztl-pro: Global provisioning stopped.");
-}
-
-static int ztl_mempool_init(void) {
-    int ret = xztl_mempool_create(XZTL_ZTL_PRO_CTX, 0, ZTL_PRO_MP_SZ,
-                                  sizeof(struct app_pro_addr), NULL, NULL);
-    if (ret)
-        return ret;
-    return XZTL_OK;
-}
-
-static void ztl_mempool_exit(void) {
-    xztl_mempool_destroy(XZTL_ZTL_PRO_CTX, 0);
 }
 
 int ztl_pro_init(void) {
@@ -125,12 +115,19 @@ int ztl_pro_init(void) {
     if (!glist)
         return XZTL_ZTL_GROUP_ERR;
 
-    if (ztl_mempool_init())
+	ret = xztl_mempool_create(XZTL_ZTL_PRO_CTX, 0, ZTL_PRO_MP_SZ,
+                                  sizeof(struct app_pro_addr), NULL, NULL);
+    if (ret)
         goto FREE;
+
+	ret = xztl_mempool_create(XZTL_NODE_MGMT_ENTRY, 0, 128,
+                        sizeof(struct xnvme_node_mgmt_entry), NULL, NULL);
+    if (ret)
+        goto MP;
 
     ret = ztl()->groups.get_list_fn(glist, app_ngrps);
     if (ret != app_ngrps)
-        goto MP;
+        goto MP1;
     if (ztl_metadata_init(glist[0]))
         goto EXIT;
     for (grp_i = 0; grp_i < app_ngrps; grp_i++) {
@@ -148,9 +145,10 @@ EXIT:
         grp_i--;
         ztl_pro_grp_exit(glist[grp_i]);
     }
-
+MP1:
+    xztl_mempool_destroy(XZTL_NODE_MGMT_ENTRY, 0);
 MP:
-    ztl_mempool_exit();
+    xztl_mempool_destroy(XZTL_ZTL_PRO_CTX, 0);
 FREE:
     free(glist);
     return XZTL_ZTL_GROUP_ERR;

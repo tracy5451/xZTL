@@ -472,8 +472,6 @@ int ztl_pro_grp_node_init(struct app_group *grp) {
         zmde->wptr = zmde->wptr_inflight = zinfo->wp;
     }
 
-    xztl_mempool_create(XZTL_NODE_MGMT_ENTRY, 0, 128,
-                        sizeof(struct xnvme_node_mgmt_entry), NULL, NULL);
     STAILQ_INIT(&submit_head);
     if (pthread_spin_init(&xnvme_mgmt_spin, 0)) {
         return 1;
