@@ -71,22 +71,6 @@ struct app_pro_addr *ztl_pro_new(uint32_t nsec, int32_t *node_id) {
     return ctx;
 }
 
-int ztl_pro_put_zone(struct app_group *grp, uint32_t zid) {
-    return ztl_pro_grp_put_zone(grp, zid);
-}
-
-int ztl_pro_finish_zone(struct app_group *grp, uint32_t zid, uint8_t type) {
-    return ztl_pro_grp_finish_zn(grp, zid, type);
-}
-
-int ztl_pro_node_finish(struct app_group *grp, struct ztl_pro_node *node) {
-    return ztl_pro_grp_node_finish(grp, node);
-}
-
-int ztl_pro_node_reset(struct app_group *grp, struct ztl_pro_node *node) {
-    return ztl_pro_grp_node_reset(grp, node);
-}
-
 void ztl_pro_check_gc(struct app_group *grp) {
 }
 
@@ -159,12 +143,8 @@ static struct app_pro_mod ztl_pro = {.mod_id         = LIBZTL_PRO,
                                      .init_fn        = ztl_pro_init,
                                      .exit_fn        = ztl_pro_exit,
                                      .check_gc_fn    = ztl_pro_check_gc,
-                                     .finish_zn_fn   = ztl_pro_finish_zone,
-                                     .put_zone_fn    = ztl_pro_put_zone,
                                      .new_fn         = ztl_pro_new,
                                      .free_fn        = ztl_pro_free,
-                                     .reset_node_fn  = ztl_pro_grp_node_reset,
-                                     .finish_node_fn = ztl_pro_grp_node_finish,
                                      .submit_node_fn = ztl_pro_grp_submit_mgmt};
 
 void ztl_pro_register(void) {
