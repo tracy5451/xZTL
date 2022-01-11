@@ -168,6 +168,7 @@ static void ztl_wca_callback_mcmd(void *arg) {
 
     if (ucmd->ncb == ucmd->nmcmd) {
         ucmd->completed = 1;
+		ztl()->pro->free_fn(ucmd->prov);
     }
 }
 
@@ -472,7 +473,7 @@ void ztl_wca_write_ucmd(struct xztl_io_ucmd *ucmd, int32_t *node_id) {
         goto FAILURE;
     }
 
-	ret = ztl_pro_new(nsec, node_id, prov, tdinfo);
+	ret = ztl()->pro->new_fn(nsec, node_id, prov, tdinfo);
 	if (ret)
 		goto FAILURE;
 
@@ -705,14 +706,15 @@ static void ztl_thd_exit(void) {
     for (tid = 0; tid < ZTL_TH_NUM; tid++) {
         td              = &xtd[tid];
         td->wca_running = 0;
-        for (mcmd_id = 0; mcmd_id < ZTL_TH_RC_NUM; mcmd_id++) {
+        
+        pthread_spin_destroy(&td->ucmd_spin);
+		xztl_ctx_media_exit(td->tctx);
+		zrocks_free(td->prov);
+
+		for (mcmd_id = 0; mcmd_id < ZTL_TH_RC_NUM; mcmd_id++) {
             zrocks_free(td->prp[mcmd_id]);
             free(td->mcmd[mcmd_id]);
         }
-
-        zrocks_free(td->prov);
-        xztl_ctx_media_exit(td->tctx);
-        pthread_spin_destroy(&td->ucmd_spin);
 
         pthread_join(td->wca_thread, NULL);
     }

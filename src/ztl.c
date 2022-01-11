@@ -245,12 +245,11 @@ int ztl_mod_register(uint8_t modtype, uint8_t modid, void *mod) {
 }
 
 void ztl_exit(void) {
-    /*
     log_info("ztl: Closing...");
 
     app_global_exit();
     ztl()->groups.exit_fn();
-    */
+	
     log_info("ztl: Closed successfully.");
 }
 
