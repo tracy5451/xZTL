@@ -39,39 +39,25 @@ void ztl_pro_free(struct app_pro_addr *ctx) {
     app_grp_ctx_sub(ctx->grp);
 }
 
-struct app_pro_addr *ztl_pro_new(uint32_t nsec, int32_t *node_id) {
-    struct xztl_mp_entry *mpe;
-    struct app_pro_addr * ctx;
+int ztl_pro_new(uint32_t nsec, int32_t *node_id, struct app_pro_addr *ctx, struct xztl_thread *tdinfo) {
     struct app_group *    grp;
     int                   ret;
 
     ZDEBUG(ZDEBUG_PRO, "ztl-pro  (new): nsec %d, node_id %d", nsec, *node_id);
-
-    mpe = xztl_mempool_get(XZTL_ZTL_PRO_CTX, 0);
-    if (!mpe) {
-        log_erra("ztl-pro: mempool is empty. node_id %d", *node_id);
-        return NULL;
-    }
-
-    ctx = (struct app_pro_addr *)mpe->opaque;
-
+	
     /* For now, we consider a single group */
     grp = glist[0];
 
-    ret = ztl_pro_grp_get(grp, ctx, nsec, node_id, NULL);
+    ret = ztl_pro_grp_get(grp, ctx, nsec, node_id, tdinfo);
     if (ret) {
         log_erra("ztl-pro: Get group zone failed. node_id %d", *node_id);
-        xztl_mempool_put(mpe, XZTL_ZTL_PRO_CTX, 0);
-        return NULL;
+        return XZTL_ZTL_PROV_ERR;
     }
 
     ctx->grp = grp;
     app_grp_ctx_add(grp);
 
-    return ctx;
-}
-
-void ztl_pro_check_gc(struct app_group *grp) {
+    return ret;
 }
 
 void ztl_pro_exit(void) {
@@ -86,7 +72,6 @@ void ztl_pro_exit(void) {
         ztl_pro_grp_exit(glist[ret]);
     }
 	xztl_mempool_destroy(XZTL_NODE_MGMT_ENTRY, 0);
-	xztl_mempool_destroy(XZTL_ZTL_PRO_CTX, 0);
 
     free(glist);
     log_info("ztl-pro: Global provisioning stopped.");
@@ -99,21 +84,18 @@ int ztl_pro_init(void) {
     if (!glist)
         return XZTL_ZTL_GROUP_ERR;
 
-	ret = xztl_mempool_create(XZTL_ZTL_PRO_CTX, 0, ZTL_PRO_MP_SZ,
-                                  sizeof(struct app_pro_addr), NULL, NULL);
-    if (ret)
-        goto FREE;
-
 	ret = xztl_mempool_create(XZTL_NODE_MGMT_ENTRY, 0, 128,
                         sizeof(struct xnvme_node_mgmt_entry), NULL, NULL);
     if (ret)
-        goto MP;
+        goto FREE;
 
     ret = ztl()->groups.get_list_fn(glist, app_ngrps);
     if (ret != app_ngrps)
-        goto MP1;
+        goto MP;
+	
     if (ztl_metadata_init(glist[0]))
         goto EXIT;
+	
     for (grp_i = 0; grp_i < app_ngrps; grp_i++) {
         if (ztl_pro_grp_node_init(glist[grp_i]))
             goto EXIT;
@@ -129,10 +111,8 @@ EXIT:
         grp_i--;
         ztl_pro_grp_exit(glist[grp_i]);
     }
-MP1:
-    xztl_mempool_destroy(XZTL_NODE_MGMT_ENTRY, 0);
 MP:
-    xztl_mempool_destroy(XZTL_ZTL_PRO_CTX, 0);
+    xztl_mempool_destroy(XZTL_NODE_MGMT_ENTRY, 0);
 FREE:
     free(glist);
     return XZTL_ZTL_GROUP_ERR;
@@ -142,7 +122,6 @@ static struct app_pro_mod ztl_pro = {.mod_id         = LIBZTL_PRO,
                                      .name           = "LIBZTL-PRO",
                                      .init_fn        = ztl_pro_init,
                                      .exit_fn        = ztl_pro_exit,
-                                     .check_gc_fn    = ztl_pro_check_gc,
                                      .new_fn         = ztl_pro_new,
                                      .free_fn        = ztl_pro_free,
                                      .submit_node_fn = ztl_pro_grp_submit_mgmt};

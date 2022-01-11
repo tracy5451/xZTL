@@ -244,8 +244,7 @@ typedef void(app_zmd_invalidate)(struct app_group *grp, struct xztl_maddr *addr,
 
 typedef int(app_pro_init)(void);
 typedef void(app_pro_exit)(void);
-typedef void(app_pro_check_gc)(struct app_group *grp);
-typedef struct app_pro_addr *(app_pro_new)(uint32_t nsec, int32_t *node_id);
+typedef int(app_pro_new)(uint32_t nsec, int32_t *node_id, struct app_pro_addr *ctx, struct xztl_thread *tdinfo);
 typedef void(app_pro_free)(struct app_pro_addr *ctx);
 typedef int(app_pro_submit_node)(struct app_group *   grp,
                                  struct ztl_pro_node *node, int32_t op_code);
@@ -293,7 +292,6 @@ struct app_pro_mod {
     char *               name;
     app_pro_init *       init_fn;
     app_pro_exit *       exit_fn;
-    app_pro_check_gc *   check_gc_fn;
     app_pro_new *        new_fn;
     app_pro_free *       free_fn;
     app_pro_submit_node *submit_node_fn;

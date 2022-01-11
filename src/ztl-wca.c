@@ -436,6 +436,7 @@ void ztl_wca_write_ucmd(struct xztl_io_ucmd *ucmd, int32_t *node_id) {
     int      zn_cmd_id_num[ZTL_PRO_STRIPE * 2]   = {0};
     uint64_t boff;
     int      ret, ncmd_zn, zncmd_i;
+	int ret = 0;
 
     struct xztl_thread *     tdinfo = ucmd->xd.tdinfo;
     struct xztl_mthread_ctx *tctx   = tdinfo->tctx;
@@ -470,7 +471,10 @@ void ztl_wca_write_ucmd(struct xztl_io_ucmd *ucmd, int32_t *node_id) {
                  *node_id);
         goto FAILURE;
     }
-    ztl_pro_grp_get(glist[0], prov, nsec, node_id, tdinfo);
+
+	ret = ztl_pro_new(nsec, node_id, prov, tdinfo);
+	if (ret)
+		goto FAILURE;
 
     /* We check the number of commands again based on the provisioning */
     ncmd = ztl_wca_ncmd_prov_based(prov);
